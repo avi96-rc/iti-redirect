@@ -1,66 +1,41 @@
-name: Post Premium PRO Quiz to Telegram (Manual)
+name: Post Premium Section to Telegram (Manual)
 
 on:
-  workflow_dispatch:
-    inputs:
-      set_number:
-        description: 'Set Number (84 to 113, "random", or "0" for main PRO section)'
-        required: false
-        default: 'random'
+  workflow_dispatch: # Manual trigger only, no schedule
 
 jobs:
-  post-premium-quiz:
+  post-premium-section:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Premium Quiz to Telegram
+      - name: Send Premium Section Link to Telegram
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          INPUT_SET: ${{ github.event.inputs.set_number }}
         run: |
           python3 - << 'EOF'
           import os
           import sys
-          import random
           import urllib.request
           import json
 
           bot_token = os.environ.get("BOT_TOKEN", "").strip()
           chat_id = os.environ.get("CHAT_ID", "").strip()
-          input_set = os.environ.get("INPUT_SET", "random").strip().lower()
 
           if not bot_token or not chat_id:
               print("❌ ERROR: Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID secret.")
               sys.exit(1)
 
-          if input_set in ["random", ""]:
-              set_num = random.randint(84, 113)
-              redirect_url = f"https://avi96-rc.github.io/iti-redirect/?section=premium&set={set_num}"
-              header_text = f"👑 <b>2025–2026 Bharat Skills (PRO) Special Test!</b>"
-              desc_text = f"आज का स्पेशल सेट: <b>PRO Set #{set_num}</b> (Previous Year Questions)"
-              cta_text = f"👉 <a href=\"{redirect_url}\">Tap here to open PRO Set {set_num} in App</a>"
-          elif input_set in ["0", "all", "main"]:
-              redirect_url = "https://avi96-rc.github.io/iti-redirect/?section=premium"
-              header_text = "👑 <b>2025–2026 Bharat Skills (PRO) MCQ Series</b>"
-              desc_text = "NIMI & Bharat Skills के सभी 30 स्पेशल PYQ प्रैक्टिस सेट्स ऐप में उपलब्ध हैं।"
-              cta_text = f"👉 <a href=\"{redirect_url}\">Tap here to view all PRO Sets in App</a>"
-          else:
-              try:
-                  set_num = int(input_set)
-                  redirect_url = f"https://avi96-rc.github.io/iti-redirect/?section=premium&set={set_num}"
-                  header_text = f"👑 <b>2025–2026 Bharat Skills (PRO) Special Test!</b>"
-                  desc_text = f"आज का स्पेशल सेट: <b>PRO Set #{set_num}</b>"
-                  cta_text = f"👉 <a href=\"{redirect_url}\">Tap here to open PRO Set {set_num} in App</a>"
-              except ValueError:
-                  print(f"❌ Invalid set_number input: {input_set}")
-                  sys.exit(1)
+          redirect_url = "https://avi96-rc.github.io/iti-redirect/?section=premium"
 
           message = (
-              f"{header_text}\n\n"
-              f"{desc_text}\n"
-              f"NCVT CBT परीक्षा में पूछे जाने वाले नवीनतम पैटर्न के प्रश्न।\n\n"
-              f"{cta_text}\n\n"
-              f"<i>(Requires ITI Electrician App installed)</i>"
+              "👑 <b>2025–2026 Bharat Skills (PRO) MCQ Series</b>\n\n"
+              "NCVT CBT परीक्षा के लिए नवीनतम पैटर्न और पिछले वर्षों के महत्वपूर्ण प्रश्न (PYQ Sets 84 से 113)!\n\n"
+              "📚 <b>विशेषताएँ:</b>\n"
+              "• NIMI & Bharat Skills आधारित 30 स्पेशल प्रैक्टिस सेट्स\n"
+              "• 1st & 2nd Year के लिए विशेष रूप से तैयार\n"
+              "• CBT परीक्षा में सीधे पूछे जाने वाले प्रश्न\n\n"
+              f"👉 <a href=\"{redirect_url}\">Tap here to open PRO Section in App</a>\n\n"
+              "<i>(Requires ITI Electrician App installed)</i>"
           )
 
           url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
@@ -80,7 +55,7 @@ jobs:
           try:
               with urllib.request.urlopen(req) as response:
                   res_data = response.read().decode("utf-8")
-                  print("✅ Successfully posted Premium Quiz to Telegram:", res_data)
+                  print("✅ Successfully posted Premium section to Telegram:", res_data)
           except urllib.error.HTTPError as e:
               err_msg = e.read().decode("utf-8")
               print(f"❌ Telegram API Error ({e.code}): {err_msg}")
