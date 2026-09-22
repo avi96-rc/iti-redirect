@@ -6,7 +6,7 @@ on:
     - cron: '30 3 * * *'
     # Runs everyday at 12:30 UTC (06:00 PM IST)
     - cron: '30 12 * * *'
-  workflow_dispatch: # Allows manual trigger anytime from the Actions tab
+  workflow_dispatch:
 
 jobs:
   post-to-telegram:
@@ -17,25 +17,60 @@ jobs:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          # 1. Calculate deterministic rotating set or pick random
-          DAY_INDEX=$(( $(date +%s) / 86400 ))
-          SET_NUM=$(( (DAY_INDEX % 113) + 1 ))
-          
-          REDIRECT_URL="https://avi96-rc.github.io/iti-redirect/?set=${SET_NUM}"
+          python3 - << 'EOF'
+          import os
+          import sys
+          import time
+          import urllib.request
+          import json
 
-          # 2. Compose message copy
-          MESSAGE="⚡ <b>ITI Electrician Daily Quiz Challenge!</b>
+          bot_token = os.environ.get("BOT_TOKEN", "").strip()
+          chat_id = os.environ.get("CHAT_ID", "").strip()
 
-आज का टेस्ट: <b>Set #${SET_NUM}</b>
-Practice 15 important questions and test your preparation.
+          if not bot_token:
+              print("❌ ERROR: TELEGRAM_BOT_TOKEN secret is empty or missing in GitHub Repository Secrets.")
+              sys.exit(1)
 
-👉 <a href=\"${REDIRECT_URL}\">Tap here to open Set ${SET_NUM} in App</a>
+          if not chat_id:
+              print("❌ ERROR: TELEGRAM_CHAT_ID secret is empty or missing in GitHub Repository Secrets.")
+              sys.exit(1)
 
-<i>(Requires ITI Electrician App installed)</i>"
+          # Rotating set 1 to 113 based on day
+          day_index = int(time.time()) // 86400
+          set_num = (day_index % 113) + 1
+          redirect_url = f"https://avi96-rc.github.io/iti-redirect/?set={set_num}"
 
-          # 3. Send message via Telegram Bot API
-          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-            --data-urlencode "chat_id=${CHAT_ID}" \
-            --data-urlencode "text=${MESSAGE}" \
-            --data-urlencode "parse_mode=HTML" \
-            --data-urlencode "disable_web_page_preview=true"
+          message = (
+              f"⚡ <b>ITI Electrician Daily Quiz Challenge!</b>\n\n"
+              f"आज का टेस्ट: <b>Set #{set_num}</b>\n"
+              f"Practice 15 important questions and test your preparation.\n\n"
+              f"👉 <a href=\"{redirect_url}\">Tap here to open Set {set_num} in App</a>\n\n"
+              f"<i>(Requires ITI Electrician App installed)</i>"
+          )
+
+          url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+          payload = {
+              "chat_id": chat_id,
+              "text": message,
+              "parse_mode": "HTML",
+              "disable_web_page_preview": True
+          }
+
+          req = urllib.request.Request(
+              url,
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Content-Type": "application/json"}
+          )
+
+          try:
+              with urllib.request.urlopen(req) as response:
+                  res_data = response.read().decode("utf-8")
+                  print("✅ Successfully sent message to Telegram:", res_data)
+          except urllib.error.HTTPError as e:
+              err_msg = e.read().decode("utf-8")
+              print(f"❌ Telegram API Error ({e.code}): {err_msg}")
+              sys.exit(1)
+          except Exception as e:
+              print(f"❌ Unexpected Error: {str(e)}")
+              sys.exit(1)
+          EOF
