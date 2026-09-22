@@ -2,10 +2,10 @@ name: Post Daily Quiz to Telegram
 
 on:
   schedule:
-    # 09:00 AM IST (03:30 UTC) - Morning Daily MCQ Quiz
-    - cron: '30 3 * * *'
-    # 06:00 PM IST (12:30 UTC) - Evening Subject-Wise Special Quiz
-    - cron: '30 12 * * *'
+    # 08:58 AM IST (03:28 UTC) - Morning Daily MCQ Quiz (Off-peak to prevent queue delay)
+    - cron: '28 3 * * *'
+    # 05:58 PM IST (12:28 UTC) - Evening Subject-Wise Special Quiz (Off-peak to prevent queue delay)
+    - cron: '28 12 * * *'
   workflow_dispatch:
 
 jobs:
