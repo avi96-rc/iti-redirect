@@ -5,35 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Opening ITI Electrician...</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 80vh;
-            margin: 0;
+            min-height: 100vh;
             padding: 20px;
             text-align: center;
-            background-color: #f8f9fa;
+            background-color: #f4f6f9;
             color: #212529;
         }
         .card {
             background: #ffffff;
-            padding: 32px 24px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            max-width: 400px;
+            padding: 36px 24px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            max-width: 420px;
             width: 100%;
         }
+        .app-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
         .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid #e9ecef;
-            border-top: 4px solid #007bff;
+            width: 40px;
+            height: 40px;
+            border: 3.5px solid #edf2f7;
+            border-top: 3.5px solid #1a73e8;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px auto;
+            animation: spin 0.9s linear infinite;
+            margin: 0 auto 16px auto;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -41,35 +52,75 @@
         }
         h2 {
             font-size: 20px;
-            margin: 0 0 10px 0;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #1a1a1a;
         }
         p {
             font-size: 14px;
             color: #6c757d;
-            margin: 0 0 24px 0;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
         .btn {
-            display: inline-block;
-            background-color: #007bff;
-            color: #ffffff;
-            padding: 12px 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 20px;
             font-size: 15px;
             font-weight: 600;
             text-decoration: none;
-            border-radius: 8px;
-            transition: background-color 0.2s;
+            border-radius: 12px;
+            transition: all 0.2s ease;
         }
-        .btn:hover {
-            background-color: #0056b3;
+        .btn-primary {
+            background-color: #1a73e8;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #1557b0;
+        }
+        .btn-playstore {
+            background-color: #01875f;
+            color: #ffffff;
+        }
+        .btn-playstore:hover {
+            background-color: #016849;
+        }
+        .hidden {
+            display: none;
+        }
+        .play-badge {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #888;
         }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="spinner"></div>
-        <h2>Opening ITI Electrician App...</h2>
-        <p>If the app does not open automatically, click the button below:</p>
-        <a id="fallback" class="btn" href="#">Open App</a>
+        <div class="spinner" id="spinner"></div>
+        <h2 id="heading">Opening in App...</h2>
+        <p id="subtext">Please wait while we open your test directly in the ITI Electrician App.</p>
+        
+        <div class="btn-group">
+            <a id="btn-open-app" class="btn btn-primary" href="#">
+                ⚡ Open in App
+            </a>
+            <a id="btn-playstore" class="btn btn-playstore" href="https://play.google.com/store/apps/details?id=com.iti.electrician">
+                📱 Install / Update on Google Play
+            </a>
+        </div>
+        
+        <div class="play-badge">
+            Requires latest version of <b>ITI Electrician</b>
+        </div>
     </div>
 
     <script>
@@ -80,14 +131,38 @@
             
             // Build custom URI scheme
             var targetUri = "itielectrician://" + encodeURIComponent(section) + search;
+            var playStoreUrl = "https://play.google.com/store/apps/details?id=com.iti.electrician";
             
-            var fallbackBtn = document.getElementById("fallback");
-            if (fallbackBtn) {
-                fallbackBtn.href = targetUri;
+            var openAppBtn = document.getElementById("btn-open-app");
+            if (openAppBtn) {
+                openAppBtn.href = targetUri;
             }
 
-            // Trigger redirection
+            var playstoreBtn = document.getElementById("btn-playstore");
+            if (playstoreBtn) {
+                playstoreBtn.href = playStoreUrl;
+            }
+
+            // Attempt to launch app via custom scheme
+            var startTime = Date.now();
             window.location.href = targetUri;
+
+            // If user is still on the web page after 2.5 seconds (app didn't open or not installed),
+            // update UI to clearly suggest Play Store update/install
+            setTimeout(function() {
+                var elapsed = Date.now() - startTime;
+                // If page was hidden/backgrounded, user switched to app; if still visible:
+                if (elapsed < 3500 && !document.hidden) {
+                    var spinner = document.getElementById("spinner");
+                    if (spinner) spinner.classList.add("hidden");
+                    
+                    var heading = document.getElementById("heading");
+                    if (heading) heading.innerText = "App not opening?";
+                    
+                    var subtext = document.getElementById("subtext");
+                    if (subtext) subtext.innerText = "Make sure you have the latest update installed from the Google Play Store.";
+                }
+            }, 2500);
         })();
     </script>
 </body>
