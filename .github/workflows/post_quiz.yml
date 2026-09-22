@@ -1,0 +1,41 @@
+name: Post Daily Quiz to Telegram
+
+on:
+  schedule:
+    # Runs everyday at 03:30 UTC (09:00 AM IST)
+    - cron: '30 3 * * *'
+    # Runs everyday at 12:30 UTC (06:00 PM IST)
+    - cron: '30 12 * * *'
+  workflow_dispatch: # Allows manual trigger anytime from the Actions tab
+
+jobs:
+  post-to-telegram:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Quiz to Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # 1. Calculate deterministic rotating set or pick random
+          DAY_INDEX=$(( $(date +%s) / 86400 ))
+          SET_NUM=$(( (DAY_INDEX % 113) + 1 ))
+          
+          REDIRECT_URL="https://avi96-rc.github.io/iti-redirect/?set=${SET_NUM}"
+
+          # 2. Compose message copy
+          MESSAGE="⚡ <b>ITI Electrician Daily Quiz Challenge!</b>
+
+आज का टेस्ट: <b>Set #${SET_NUM}</b>
+Practice 15 important questions and test your preparation.
+
+👉 <a href=\"${REDIRECT_URL}\">Tap here to open Set ${SET_NUM} in App</a>
+
+<i>(Requires ITI Electrician App installed)</i>"
+
+          # 3. Send message via Telegram Bot API
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${CHAT_ID}" \
+            --data-urlencode "text=${MESSAGE}" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "disable_web_page_preview=true"
